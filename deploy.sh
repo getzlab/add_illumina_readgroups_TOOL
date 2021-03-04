@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # method name
-METHOD_NAME=method_name_goes_here
+METHOD_NAME=add_illumina_readgroups
 
 # docker build parameters (most likely, the defaults are OK)
 EXTRA_DOCKER_BUILD_ARGS=""
