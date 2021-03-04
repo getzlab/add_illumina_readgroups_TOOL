@@ -1,6 +1,7 @@
 # add_illumina_readgroups.py
 
-```usage: add_illumina_readgroups.py [-h] -c CN -l LB -s SM bam
+```
+usage: add_illumina_readgroups.py [-h] -c CN -l LB -s SM bam
 
 Add readgroups based on Illumina IDs to given BAM
 
