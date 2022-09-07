@@ -39,7 +39,7 @@ def main():
     header_dict = dict()
 
     # Add readgroup tag to each read and create readgroups for header
-    with pysam.AlignmentFile(in_bam, 'rb') as in_bam_fh, \
+    with pysam.AlignmentFile(in_bam, 'rb', check_sq=False) as in_bam_fh, \
          pysam.AlignmentFile(temp_bam, 'wb', template=in_bam_fh) as temp_bam_fh:
         header_dict = in_bam_fh.header.to_dict()
         for read in in_bam_fh.fetch(until_eof=True):
