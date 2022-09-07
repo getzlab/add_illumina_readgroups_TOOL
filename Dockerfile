@@ -1,7 +1,8 @@
 FROM google/cloud-sdk:slim
 
 RUN set -ex \
-    && apt-get update && apt-get install -y --no-install-recommends \
+    && curl https://packages.cloud.google.com/apt/doc/apt-key.gpg | apt-key add - \
+    && apt-get update -y --allow-releaseinfo-change && apt-get install -y --no-install-recommends \
         autoconf \
         automake \
         gcc \
