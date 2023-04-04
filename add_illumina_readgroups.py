@@ -85,7 +85,7 @@ if __name__ == '__main__':
                 writer = Process(target=write_reads, args=(read_queue, temp_bam_fh))
                 header_dict = in_bam_fh.header.to_dict()
                 writer.start()
-                read_procs = Pool(arg.proc - 2)
+                read_procs = Pool(args.proc - 2)
                 read_procs.starmap_async(process_read,
                                          ((read, readgroups,
                                            ReadGroup, read_queue) \
