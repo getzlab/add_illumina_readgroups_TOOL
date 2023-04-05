@@ -10,7 +10,8 @@ import pysam
 if version_info < (3, 7):
     raise RuntimeError("This tool requires Python 3.7+")
 
-def process_read(read, readgroups, ReadGroup, read_queue):
+def process_read(read_metadata):
+    read, readgroups, ReadGroup, read_queue = read_metadata
     readgroup_id = '.'.join(read.query_name.split(':')[2:4])
     read.set_tag('RG', readgroup_id, 'Z')
     if readgroup_id not in readgroups:
@@ -23,7 +24,7 @@ def write_reads(read_queue, bam_fh):
         if read is None:
             break
         bam_fh.write(read)
-        
+
 def run_serial(in_bam, temp_bam, ReadGroup, threads):
     readgroups = {}
     # Add readgroup tag to each read and create readgroups for header
@@ -86,7 +87,7 @@ if __name__ == '__main__':
                 header_dict = in_bam_fh.header.to_dict()
                 writer.start()
                 read_procs = Pool(args.proc - 2)
-                read_procs.starmap_async(process_read,
+                read_procs.imap_unordered(process_read,
                                          ((read, readgroups,
                                            ReadGroup, read_queue) \
                                           for read in \
