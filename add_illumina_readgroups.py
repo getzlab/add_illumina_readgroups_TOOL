@@ -79,7 +79,7 @@ if __name__ == '__main__':
         pool_size = args.proc - 2
         with Manager() as manager:
             readgroups = manager.dict()
-            read_queue = manager.Queue(pool_size * 2)
+            read_queue = manager.Queue(pool_size)
 
             # Add readgroup tag to each read and create readgroups for header
             with pysam.AlignmentFile(in_bam, 'rb', check_sq=False, threads=threads) as in_bam_fh, \
@@ -92,8 +92,7 @@ if __name__ == '__main__':
                                           ((read, readgroups,
                                             ReadGroup, read_queue) \
                                            for read in \
-                                           in_bam_fh.fetch(until_eof=True)),
-                                          pool_size * 10)
+                                           in_bam_fh.fetch(until_eof=True)))
                 read_procs.close()
                 read_procs.join()
 
