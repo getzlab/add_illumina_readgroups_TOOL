@@ -93,7 +93,7 @@ if __name__ == '__main__':
                                             ReadGroup, read_queue) \
                                            for read in \
                                            in_bam_fh.fetch(until_eof=True)),
-                                          100 * pool_size)
+                                          10 * pool_size)
                 read_procs.close()
                 read_procs.join()
 
