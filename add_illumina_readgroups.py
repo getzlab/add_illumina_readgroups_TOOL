@@ -86,12 +86,14 @@ if __name__ == '__main__':
                 writer = Process(target=write_reads, args=(read_queue, temp_bam_fh))
                 header_dict = in_bam_fh.header.to_dict()
                 writer.start()
-                read_procs = Pool(args.proc - 2)
+                pool_size = args.proc - 2
+                read_procs = Pool(pool_size)
                 read_procs.imap_unordered(process_read,
-                                         ((read, readgroups,
-                                           ReadGroup, read_queue) \
-                                          for read in \
-                                          in_bam_fh.fetch(until_eof=True)))
+                                          ((read, readgroups,
+                                            ReadGroup, read_queue) \
+                                           for read in \
+                                           in_bam_fh.fetch(until_eof=True)),
+                                          100 * pool_size)
                 read_procs.close()
                 read_procs.join()
 
