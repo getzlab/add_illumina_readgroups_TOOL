@@ -76,9 +76,10 @@ if __name__ == '__main__':
     header_dict = {}
 
     if args.proc > 3:
+        pool_size = args.proc - 2
         with Manager() as manager:
             readgroups = manager.dict()
-            read_queue = manager.Queue()
+            read_queue = manager.Queue(pool_size * 2)
 
             # Add readgroup tag to each read and create readgroups for header
             with pysam.AlignmentFile(in_bam, 'rb', check_sq=False, threads=threads) as in_bam_fh, \
@@ -86,13 +87,13 @@ if __name__ == '__main__':
                 writer = Process(target=write_reads, args=(read_queue, temp_bam_fh))
                 header_dict = in_bam_fh.header.to_dict()
                 writer.start()
-                pool_size = args.proc - 2
                 read_procs = Pool(pool_size)
                 read_procs.imap_unordered(process_read,
                                           ((read, readgroups,
                                             ReadGroup, read_queue) \
                                            for read in \
-                                           in_bam_fh.fetch(until_eof=True)))
+                                           in_bam_fh.fetch(until_eof=True)),
+                                          pool_size * 10)
                 read_procs.close()
                 read_procs.join()
 
