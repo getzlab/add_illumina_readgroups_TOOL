@@ -4,7 +4,7 @@
 METHOD_NAME=add_illumina_readgroups
 
 # docker build parameters (most likely, the defaults are OK)
-EXTRA_DOCKER_BUILD_ARGS=""
+EXTRA_DOCKER_BUILD_ARGS="--platform=linux/amd64"
 DOCKER_BUILD_PATH="."
 
 #

@@ -15,6 +15,6 @@ RUN set -ex \
         libssl-dev \
         libncurses5-dev \
     && rm -rf /var/lib/apt/lists/* \
-    && pip3 --no-cache-dir install pysam
+    && HTSLIB_CONFIGURE_OPTIONS="--enable-libcurl" pip3 -v --no-cache-dir install pysam --no-binary :all:
 
 COPY add_illumina_readgroups.py /usr/local/bin/
