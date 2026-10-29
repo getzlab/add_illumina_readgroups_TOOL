@@ -57,7 +57,7 @@ use_scratch_disk = True
 It doesn't pass `-p`/`-t` yet. On switching to `v13` or later, the task should, per the README
 (job price is the priority):
 - run with `-p "$SLURM_CPUS_PER_TASK" -t 1` (see "Running inside a wolF task");
-- set `cpus-per-task` to about 1 per 40 GB of input (8 for a 300 GB BAM), and `mem` to 1G;
+- set `cpus-per-task` to about 1 per 22 GB of input (14 for a 300 GB BAM), and `mem` to 4G;
 - set `scratch_disk_size` to about 1.1× the input size (see "Disks");
 - set `checkpoint = True`, so preemption resumes rather than restarts (see "Preemption").
 
@@ -108,16 +108,20 @@ wolF dispatches tasks through canine onto an autoscaling Slurm cluster on GCE
 `canine/` on `parallel-localization-fuse`, `slurm_gcp_docker/` on `fuse-localize`), each with
 its own CLAUDE.md. What matters for this tool:
 
-- **Containers:** each task runs under podman, started outside the Slurm job's cgroup. So
-  `os.cpu_count()` and the memory the tool can see are the node's, not the job's. Size `-p`/`-t`
+- **Containers:** each task runs under podman. wolF moves the container's processes into the
+  Slurm job's cgroups, so the job is confined to its cores and `mem` (page cache included). But
+  `os.cpu_count()` and the memory the tool can see are still the node's. Size `-p`/`-t`
   from `SLURM_CPUS_PER_TASK`, and memory from `SLURM_MEM_PER_NODE` (MB), at run time. wolF passes
   both into the container. A size written into the script doesn't follow wolF's out-of-memory
   retry, which resubmits with 1.5× `mem`. wolF's `UPGRADE_PLAN.md` ("How-to: sizing tool memory
   and threads from the job's environment") has the convention.
 - **Node types:** Slurm places the job on a node type with enough CPUs and memory, and a job
-  can take only part of a node. So cost a job as cores + memory (+ its disk), not as a whole
-  VM. Node types come from the run's `nodetypes.json`. The pipeline's has n1-standard-1/8 and
-  n1-highmem-4/8, preemptible and not; the README's 8-core job fits these.
+  can take only part of a node. A job that fills its node pays for all of it, including unused
+  memory, so this tool belongs on n1-highcpu or n1-custom nodes with minimal memory. Node types
+  come from the run's `nodetypes.json`. The pipeline's has only n1-standard-1/8 and
+  n1-highmem-4/8, preemptible and not; none of those fits a 14-core job, and n1-standard-8 makes
+  an 8-core job about 30% dearer than n1-highcpu-8. Whether `slurm_gcp_docker` accepts custom
+  type names hasn't been checked.
 - **Preemption:** nodes are preemptible by default. A preempted job is requeued and its script
   reruns from the start. The tool can resume from its own checkpoint only if the task sets
   wolF's `checkpoint = True`. Without it, wolF prepends `rm -rf *` to the script
@@ -143,8 +147,8 @@ its own CLAUDE.md. What matters for this tool:
   - **One disk per job:** jobs packed on one node each have their own disk, so they don't share
     disk throughput.
   - **Job avoidance:** a scratch disk labelled finished makes a rerun of the job skip it.
-- **Memory:** the tool needs very little (under 100 MB at `-p 32`). The job's `mem` mostly
-  decides node placement and page cache.
+- **Memory:** the tool needs very little (under 125 MB at `-p 32`). The job's `mem` mostly
+  decides node placement and page cache. The 4G recommendation is untested under a cap.
 
 ## Conventions
 
