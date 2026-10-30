@@ -34,8 +34,8 @@ Remote: `git@github.com:getzlab/add_illumina_readgroups_TOOL.git`, branch `maste
   `google/cloud-sdk:slim`. `deploy.sh` builds for `linux/amd64`, and pushes
   `gcr.io/broad-getzlab-workflows/add_illumina_readgroups:v<commit count>` (prefixed with
   `<branch>_` off `master`).
-- **The pipeline pins `v13`**, which adds `-p`/`-t`, the collapse merge and checkpointing. A
-  new image needs the pin bumped in the pipeline's task (below).
+- **The pipeline pins `v17`.** `v13` added `-p`/`-t`, the collapse merge and checkpointing;
+  `v17` reads readgroups from names without instrument and run. A new image needs the pin bumped in the pipeline's task (below).
 - **Building locally** on an arm64 Mac runs under QEMU emulation: slow for compiles, and not a
   guide to performance. Benchmark on GCE.
 
@@ -47,7 +47,7 @@ The pipeline is `../alignment_pipeline_wolF`, on branch `gdc_realigner-wolf-2.0`
 
 **The task** (`class repair_readgroups`) follows the README's recommended settings (job price
 is the priority):
-- runs `add_illumina_readgroups.py -p "$SLURM_CPUS_PER_TASK" -t 1 ...` on `v13`, and fails
+- runs `add_illumina_readgroups.py -p "$SLURM_CPUS_PER_TASK" -t 1 ...` on `v17`, and fails
   if `SLURM_CPUS_PER_TASK` is unset;
 - `mem` 4G, `use_scratch_disk = True`, `checkpoint = True`;
 - per BAM, the workflow sets `cpus-per-task` (about 1 per 22 GB, capped at 16) and
