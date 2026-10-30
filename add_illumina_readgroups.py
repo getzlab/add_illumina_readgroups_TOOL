@@ -45,7 +45,13 @@ CHECKPOINT_VERSION = 1
 
 
 def readgroup_id_from_name(query_name):
-    return '.'.join(query_name.split(':')[2:4])
+    # <flowcell>.<lane> from instrument:run:flowcell:lane:tile:x:y (maybe with
+    # a UMI after y), or from flowcell:lane:tile:x:y when instrument and run
+    # are missing
+    fields = query_name.split(':')
+    if len(fields) == 5:
+        return fields[0] + '.' + fields[1]
+    return '.'.join(fields[2:4])
 
 
 def read_bgzf_block(fh, coffset):

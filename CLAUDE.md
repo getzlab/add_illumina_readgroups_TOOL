@@ -10,7 +10,8 @@ realignment pipeline (`../alignment_pipeline_wolF`), on BAMs from external cente
 readgroups are missing or wrong.
 
 - **The readgroup rule:** `readgroup_id_from_name()` makes the ID `<flowcell>.<lane>` from the
-  3rd and 4th `:`-separated fields of `instrument:run:flowcell:lane:tile:x:y`. Each `@RG` line
+  3rd and 4th `:`-separated fields of `instrument:run:flowcell:lane:tile:x:y`, or the 1st and
+  2nd of a 5-field name without instrument and run (`flowcell:lane:tile:x:y`). Each `@RG` line
   gets `ID`, `CN`, `LB`, `SM` (from `-c`, `-l`, `-s`) and `PL:ILLUMINA`. The rest of the input
   header is kept.
 - **Parallelism:** `-p` worker processes, with `-t` compression threads each, tag record-aligned
