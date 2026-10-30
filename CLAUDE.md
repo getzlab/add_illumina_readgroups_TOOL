@@ -33,8 +33,8 @@ Remote: `git@github.com:getzlab/add_illumina_readgroups_TOOL.git`, branch `maste
   `google/cloud-sdk:slim`. `deploy.sh` builds for `linux/amd64`, and pushes
   `gcr.io/broad-getzlab-workflows/add_illumina_readgroups:v<commit count>` (prefixed with
   `<branch>_` off `master`).
-- **The pipeline pins `v9`**, which predates `-p`/`-t`. `v13` adds them, the collapse merge and
-  checkpointing. The pipeline's task hasn't been switched to it yet (below).
+- **The pipeline pins `v13`**, which adds `-p`/`-t`, the collapse merge and checkpointing. A
+  new image needs the pin bumped in the pipeline's task (below).
 - **Building locally** on an arm64 Mac runs under QEMU emulation: slow for compiles, and not a
   guide to performance. Benchmark on GCE.
 
@@ -44,22 +44,16 @@ The pipeline is `../alignment_pipeline_wolF`, on branch `gdc_realigner-wolf-2.0`
 `MODERN_WOLF_2.0_PLAN.md` ("Step 2" covers readgroup repair). The task and workflow are in
 `wolF/tasks.py`.
 
-**The task** (`class repair_readgroups`):
+**The task** (`class repair_readgroups`) follows the README's recommended settings (job price
+is the priority):
+- runs `add_illumina_readgroups.py -p "$SLURM_CPUS_PER_TASK" -t 1 ...` on `v13`, and fails
+  if `SLURM_CPUS_PER_TASK` is unset;
+- `mem` 4G, `use_scratch_disk = True`, `checkpoint = True`;
+- per BAM, the workflow sets `cpus-per-task` (about 1 per 22 GB, capped at 16) and
+  `scratch_disk_size` (1.1× the input) with `repair_readgroups_sizing()`, and sends the job to
+  an n1-highcpu-8/16 partition with `highcpu_slurm_args()`.
 
-```python
-script = 'add_illumina_readgroups.py -c "$center" -l "$library" -s "$sample" $bam'
-outputs = {"bam": "*.readgroupsadded.bam"}
-docker = "gcr.io/broad-getzlab-workflows/add_illumina_readgroups:v9"
-resources = {"mem": "4G", "cpus-per-task": "2"}
-use_scratch_disk = True
-```
-
-It doesn't pass `-p`/`-t` yet. On switching to `v13` or later, the task should, per the README
-(job price is the priority):
-- run with `-p "$SLURM_CPUS_PER_TASK" -t 1` (see "Running inside a wolF task");
-- set `cpus-per-task` to about 1 per 22 GB of input (14 for a 300 GB BAM), and `mem` to 4G;
-- set `scratch_disk_size` to about 1.1× the input size (see "Disks");
-- set `checkpoint = True`, so preemption resumes rather than restarts (see "Preemption").
+If the README's recommendations change, change those helpers too.
 
 **Where it sits in `reversion_workflow`**, for BAM input:
 
@@ -118,10 +112,10 @@ its own CLAUDE.md. What matters for this tool:
 - **Node types:** Slurm places the job on a node type with enough CPUs and memory, and a job
   can take only part of a node. A job that fills its node pays for all of it, including unused
   memory, so this tool belongs on n1-highcpu or n1-custom nodes with minimal memory. Node types
-  come from the run's `nodetypes.json`. The pipeline's has only n1-standard-1/8 and
-  n1-highmem-4/8, preemptible and not; none of those fits a 14-core job, and n1-standard-8 makes
-  an 8-core job about 30% dearer than n1-highcpu-8. Whether `slurm_gcp_docker` accepts custom
-  type names hasn't been checked.
+  come from the run's `nodetypes.json`. The pipeline's includes n1-highcpu-8/16, preemptible
+  and not, for this task. On n1-standard-8, an 8-core job would cost about 30% more.
+  `slurm_gcp_docker` also accepts n1-custom types, e.g. 14 vCPUs with minimal memory, at about a
+  5% premium per vCPU and GB.
 - **Preemption:** nodes are preemptible by default. A preempted job is requeued and its script
   reruns from the start. The tool can resume from its own checkpoint only if the task sets
   wolF's `checkpoint = True`. Without it, wolF prepends `rm -rf *` to the script
